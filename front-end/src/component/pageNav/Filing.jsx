@@ -21,6 +21,14 @@ const Provinces = [
   "NorthCape",
 ];
 
+  // Helper function to parse filingRow
+function parseFilingRow(filingRow) {
+  const letterPart = filingRow.match(/[A-Za-z]+/)?.[0] || "";
+  const numberPartStr = filingRow.match(/\d+/)?.[0] || "";
+  const numberPart = numberPartStr ? parseInt(numberPartStr, 10) : null;
+  return { letterPart, numberPart };
+}
+
 export default function Filing() {
     const [showForm, setShowForm] = useState(false);
     const [files, setFiles] = useState([]);
@@ -51,17 +59,27 @@ export default function Filing() {
   const fetchFiles = async () => {
     try {
       const data = await getAllFilings();
-      setFiles(data);
+
+      // Ensure all DOBs are in YYYY-MM-DD format
+      const formattedData = data.map(file => ({
+        ...file,
+        dateOfBirth: file.dateOfBirth
+          ? new Date(file.dateOfBirth).toISOString().split("T")[0]
+          : ""
+      }));
+
+      setFiles(formattedData);
     } catch (err) {
       console.error(err);
     }
   };
 
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-    const handleSubmit = async (e) => {
+   const handleSubmit = async (e) => {
     e.preventDefault();
     const combinedFilingRow = formData.filingRowPart + formData.filingColumnPart;
 
@@ -138,6 +156,26 @@ export default function Filing() {
       !filterRow || file.filingRow.toLowerCase().startsWith(filterRow.toLowerCase());
     return matchesSearch && matchesRow;
   });
+
+
+
+// Sort filtered files before rendering
+const sortedFiles = filteredFiles.slice().sort((a, b) => {
+  const aRow = parseFilingRow(a.filingRow || "");
+  const bRow = parseFilingRow(b.filingRow || "");
+
+  if (aRow.letterPart < bRow.letterPart) return -1;
+  if (aRow.letterPart > bRow.letterPart) return 1;
+
+  // Treat null numberPart as greater to put "A" after "A01"
+  if (aRow.numberPart === null && bRow.numberPart !== null) return 1;
+  if (aRow.numberPart !== null && bRow.numberPart === null) return -1;
+
+  if (aRow.numberPart === null && bRow.numberPart === null) return 0;
+
+  return aRow.numberPart - bRow.numberPart;
+});
+
 
   return (
     <div className="flex flex-col w-full h-full p-2 overflow-x-auto">
@@ -308,21 +346,34 @@ export default function Filing() {
     </div>
   ) : (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-      {filteredFiles.map((file) => (
-                  <div
+      {sortedFiles.map((file) => {
+            const filingRow = file.filingRow || "";
+            const rowPart = filingRow.charAt(0);
+            const colPart = filingRow.slice(1);
+
+        return(
+             <div
             key={file._id}
             className="flex flex-col justify-center bg-white rounded-md p-4 shadow-sm border border-[#c2c0c0] w-full mx-auto"
           >
             <div className="flex justify-between w-full mb-3">
-              <h1 className="text-[#3D3A3A] text-lg font-bold">{file.filingRow}</h1>
+              <h1 className="text-[#3D3A3A] text-lg font-bold">{rowPart}</h1>
               <div className="flex justify-center items-center w-12 h-7 bg-[#A8E6E8] rounded-full">
-                <h1 className="text-[#0f7275] font-bold">{file.filingRow}</h1>
+                <h1 className="text-[#0f7275] font-bold">{colPart}</h1>
               </div>
             </div>
             <h1 className="text-[#3D3A3A] font-bold mb-2">{file.fullName}</h1>
             <p className="text-sm text-[#535050] mb-1">{file.idNumber}</p>
             <p className="text-sm text-[#535050] mb-1">{file.gender}</p>
-            <p className="text-sm text-[#535050] mb-1">{file.dateOfBirth}</p>
+            <p className="text-sm text-[#535050] mb-1">
+              {file.dateOfBirth
+                ? new Date(file.dateOfBirth).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric",
+                  })
+                : "N/A"}
+          </p>
             <p className="text-sm text-[#535050] mb-1">{file.address}</p>
             <p className="text-sm text-[#535050] mb-1">{file.province}</p>
             <p className="text-sm text-[#535050] mb-1">{file.email}</p>
@@ -331,7 +382,7 @@ export default function Filing() {
               {file.createdAt && new Date(file.createdAt).toLocaleString()}
             </p>
             <p className="text-sm text-[#535050] mb-3">
-              Created by: {file.createdBy?.name || "Unknown"}
+              Created by: {file.createdBy?.fullName || file.createdBy?.email || "Unknown"}
             </p>
             <div className="w-full flex justify-end gap-2">
               <button  onClick={() => handleEdit(file)}
@@ -344,7 +395,8 @@ export default function Filing() {
               </button>
             </div>
           </div>
-      ))}
+        )
+      } )}
     </div>
   )}
 </div>

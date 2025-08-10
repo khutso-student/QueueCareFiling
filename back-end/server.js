@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
 const filingRoutes = require('./routes/filingRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
 dotenv.config();
 connectDB();
@@ -30,6 +31,7 @@ app.use(express.json());
 // ✅ Routes
 app.use('/api/users', userRoutes);
 app.use('/api/filings', filingRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5000;

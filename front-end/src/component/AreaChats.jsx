@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   AreaChart,
   Area,
@@ -8,25 +9,18 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-const data = [
-  { name: 'Jan', files: 30 },
-  { name: 'Feb', files: 45 },
-  { name: 'Mar', files: 28 },
-  { name: 'Apr', files: 60 },
-  { name: 'May', files: 50 },
-  { name: 'Jun', files: 80 },
-  { name: 'Jul', files: 65 },
-];
+export default function AreaFilingChart({ data = [] }) {
+  // Optional: compute total from data
+  const totalFiles = data.reduce((acc, item) => acc + item.files, 0);
 
-export default function AreaChartFiling() {
   return (
     <div className="w-full h-65  p-1">
-        <div className='flex justify-between mb-2'>
-            <h2 className="text-[#535050] text-xs ">Monthly Patient files Updates</h2>
-              <p className="text-gray-700 text-xs mb-2">
-                Total Files: <span className="font-semibold text-black">500</span>
-            </p>
-        </div>
+      <div className='flex justify-between mb-2'>
+        <h2 className="text-[#535050] text-xs ">Monthly Patient files Updates</h2>
+        <p className="text-gray-700 text-xs mb-2">
+          Total Files: <span className="font-semibold text-black">{totalFiles}</span>
+        </p>
+      </div>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data}>
           <defs>

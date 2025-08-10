@@ -1,48 +1,36 @@
 const Filing = require('../models/Filing');
 const generateNextFilingRow = require('../utils/generateFilingRow');
+const User = require('../models/User');
 
 // Create patient file
 const createFiling = async (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({ message: "Unauthorized: user not authenticated" });
-  }
-
   try {
-    const {
-      fullName,
-      idNumber,
-      gender,
-      dateOfBirth,
-      address,
-      province,
-      email,
-      phoneNumber,
-      postalCode
-    } = req.body;
+    const userRole = req.user.role;
 
-    const filingRow = await generateNextFilingRow();
+    if (userRole !== "admin") {
+      return res.status(403).json({ message: "Unauthorized role" });
+    }
 
     const newFiling = new Filing({
-      fullName,
-      idNumber,
-      gender,
-      dateOfBirth,
-      address,
-      province,
-      email,
-      phoneNumber,
-      postalCode,
-      filingRow,
-      createdBy: req.user._id
+      ...req.body,
+      createdBy: req.user._id, // assign logged-in user
     });
 
-    await newFiling.save();
-    res.status(201).json(newFiling);
+    const savedFile = await newFiling.save();
+    res.status(201).json(savedFile);
+
   } catch (error) {
-    console.error('Error creating filing:', error);
-    res.status(500).json({ message: 'Failed to create filing.' });
+    console.error("Create Filing Error:", error);
+
+    // Duplicate ID Number handling
+    if (error.code === 11000 && error.keyPattern?.idNumber) {
+      return res.status(400).json({ message: "ID Number already exists." });
+    }
+
+    res.status(500).json({ message: "Failed to create file" });
   }
 };
+
 
 // Get all patients Files
 const getAllFiles = async (req, res) => {
@@ -55,25 +43,44 @@ const getAllFiles = async (req, res) => {
 
     const files = await Filing.find()
       .sort({ createdAt: -1 })
-      .populate("createdBy", "fullName email"); // only if you want creator info
+      .populate("createdBy", "fullName email");
+      console.log(JSON.stringify(files, null, 2)); 
 
-    res.status(200).json(files);
+    // Format all DOBs to YYYY-MM-DD
+    const formattedFiles = files.map(file => ({
+      ...file.toObject(),
+      dateOfBirth: file.dateOfBirth
+        ? file.dateOfBirth.toISOString().split("T")[0]
+        : null
+    }));
+
+    res.status(200).json(formattedFiles);
   } catch (error) {
     console.error("Fetch All Files Error:", error);
-    res.status(500).json({ message: "Failed to fetch Files" });
+    res.status(500).json({ message: "Failed to fetch files" });
   }
 };
 
-// Find file by Id
+
+// Find file by ID
 const getFileById = async (req, res) => {
   try {
-    const file = await Filing.findById(req.params.id);
-    if (!file) return res.status(404).json({ message: 'Patient file not found' });
-    
-    res.status(200).json(file);
+    const file = await Filing.findById(req.params.id)
+      .populate("createdBy", "fullName email");
+
+    if (!file) {
+      return res.status(404).json({ message: "Patient file not found" });
+    }
+
+    const fileObj = file.toObject();
+    if (fileObj.dateOfBirth) {
+      fileObj.dateOfBirth = fileObj.dateOfBirth.toISOString().split("T")[0];
+    }
+
+    res.status(200).json(fileObj);
   } catch (error) {
     console.error("Get File By ID Error:", error);
-    res.status(500).json({ message: 'Failed to fetch patient file' });
+    res.status(500).json({ message: "Failed to fetch patient file" });
   }
 };
 
@@ -91,12 +98,14 @@ const updateFiling = async (req, res) => {
       province,
       email,
       phoneNumber,
-      postalCode
+      postalCode,
+      filingRow,  // also extract filingRow here
     } = req.body;
 
     const file = await Filing.findById(req.params.id);
     if (!file) return res.status(404).json({ message: "Patient file not found" });
 
+    file.filingRow = filingRow || file.filingRow;
     file.fullName = fullName || file.fullName;
     file.idNumber = idNumber || file.idNumber;
     file.gender = gender || file.gender;
@@ -136,3 +145,6 @@ module.exports = {
   updateFiling,
   deleteFile
 };
+
+
+
