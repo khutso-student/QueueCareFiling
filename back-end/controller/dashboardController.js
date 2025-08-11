@@ -1,13 +1,25 @@
-const  User = require('../models/User')
+const mongoose = require('mongoose');
 const Filing = require('../models/Filing');
+const User = require('../models/User')
 
 const getDashboardStats = async (req, res) => {
   try {
+    const adminId = req.user.id;
+    console.log("Admin ID from middleware:", adminId);
+
+    // Use new to construct ObjectId
+    const adminObjectId = new mongoose.Types.ObjectId(adminId);
+
     const totalFiles = await Filing.countDocuments();
+    const filesCreatedByAdmin = await Filing.countDocuments({ createdBy: adminObjectId });
+
+    console.log("Total files in DB:", totalFiles);
+    console.log("Files created by admin:", filesCreatedByAdmin);
+
     const femaleCount = await Filing.countDocuments({ gender: "Female" });
     const maleCount = await Filing.countDocuments({ gender: "Male" });
+    const adminCount = await User.countDocuments({ role: "admin" });
 
-    // Monthly files aggregation by month (0 = Jan, 1 = Feb, etc.)
     const monthlyFilesRaw = await Filing.aggregate([
       {
         $group: {
@@ -18,7 +30,6 @@ const getDashboardStats = async (req, res) => {
       { $sort: { _id: 1 } }
     ]);
 
-    // Map aggregation result to array with month names
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const monthlyFiles = monthNames.map((name, index) => {
       const monthData = monthlyFilesRaw.find(m => m._id === index + 1);
@@ -30,8 +41,10 @@ const getDashboardStats = async (req, res) => {
 
     res.status(200).json({
       totalFiles,
+      filesCreatedByAdmin,
       femaleCount,
       maleCount,
+      adminCount,  
       monthlyFiles,
     });
   } catch (error) {

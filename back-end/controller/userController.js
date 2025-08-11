@@ -127,3 +127,29 @@ exports.getUserById = async (req, res) => {
         res.status(500).json({ message: 'Failed to fetch user', error: error.message });
     }
 };
+
+
+exports.updateUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { name, email, role } = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { name, email, role },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.status(200).json({
+      message: "User profile updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Update Error:", error.message);
+    res.status(500).json({ error: "Failed to update user profile" });
+  }
+};

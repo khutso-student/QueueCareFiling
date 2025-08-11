@@ -7,6 +7,7 @@ const {
     forgotPassword,
     resetPassword,
     getUserById,
+    updateUser
 
 } = require('../controller/userController');
 
@@ -16,6 +17,7 @@ router.post('/login', login);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword); 
 router.get('/:id', getUserById);
+router.put('/:id', updateUser);
 
 
 module.exports = router;
