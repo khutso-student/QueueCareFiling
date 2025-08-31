@@ -14,8 +14,8 @@ connectDB();
 
 
 const allowedOrigins = [
-  "http://localhost:5173",                 
-  process.env.CLIENT_URL               
+  process.env.CLIENT_URL,      // frontend URL
+  "http://localhost:5173",          
 ].filter(Boolean); 
 
 const corsOptions = {
