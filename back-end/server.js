@@ -9,18 +9,18 @@ const filingRoutes = require("./routes/filingRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const upload = require("./routes/upload");
 
-// ✅ Connect to MongoDB
+
 connectDB();
 
-// 🔑 Allow localhost in dev, Vercel frontend in production
+
 const allowedOrigins = [
-  "http://localhost:5173",                  // dev (Vite)
-  process.env.CLIENT_URL                    // prod (Vercel)
-].filter(Boolean); // removes undefined if CLIENT_URL is not set
+  "http://localhost:5173",                 
+  process.env.CLIENT_URL               
+].filter(Boolean); 
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // allow Postman / server-to-server
+    if (!origin) return callback(null, true); 
     if (allowedOrigins.indexOf(origin) === -1) {
       const msg = `❌ CORS blocked: ${origin}`;
       return callback(new Error(msg), false);

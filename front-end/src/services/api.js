@@ -1,11 +1,15 @@
 import axios from "axios";
 
+// Pick base URL from Vite env variable
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 // Create an Axios instance
 const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: `${BASE_URL}/api`,
   withCredentials: true,
 });
 
+// Add Authorization header automatically if token exists
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
@@ -29,7 +33,7 @@ export const login = async (data) => {
 };
 
 export const forgotPassword = async (data) => {
-  const res = await api.post('/users/forgot-password', data);
+  const res = await api.post("/users/forgot-password", data);
   return res.data;
 };
 

@@ -56,13 +56,14 @@ export default function Dashboard() {
   ];
 
   const [profile, setProfile] = useState(user);
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem("token");
 
-        const res = await fetch("http://localhost:5000/api/dashboard/stats", {
+        const res = await fetch(`${BASE_URL}/api/dashboard/stats`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -89,7 +90,7 @@ export default function Dashboard() {
       if (!user) return;
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`http://localhost:5000/api/users/${user.id}`, {
+        const res = await fetch(`${BASE_URL}/api/users/${user.id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
